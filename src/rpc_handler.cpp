@@ -55,7 +55,7 @@ void rpc::RPCHandler::start(RPCInstanceSocket &m_sock, FunctionHandler &fh, int 
 						continue;
 					}
 					p->set_rpc_socket(sock);
-					p->set_no_block();
+					// p->set_no_block();
 					epoller.add(sock, p, (EPOLLIN | EPOLLHUP | EPOLLERR | EPOLLONESHOT));
 				}
 			} else {

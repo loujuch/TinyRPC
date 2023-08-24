@@ -11,6 +11,8 @@
 #include <endian.h>
 #include <assert.h>
 
+#include <iostream>
+
 rpc::RPCSocket::RPCSocket() :
 	sock_fd_(INADDR_NONE) {
 }
