@@ -6,6 +6,7 @@
 #include "client.hpp"
 #include "rpc_data.hpp"
 #include "serializable.hpp"
+#include "rpc_exception.hpp"
 
 #include <assert.h>
 
@@ -98,11 +99,15 @@ int main() {
 	// std::cout << num << std::endl;
 	rpc::Client client;
 	assert(client.connect("127.0.0.1", 8080));
-	auto tmp = client.call<test1>("change", test0("loujuch"));
-	tmp.print();
-	auto tmp1 = client.call<int>("sum", 2, 9);
-	std::cout << tmp1 << std::endl;
-	auto tmp2 = client.call<double>("sumv", std::vector<double>({ 1, 22,3,1,0.23 }));
-	std::cout << tmp2 << std::endl;
+	try {
+		auto tmp = client.call<test1>("change", test0("loujuch"));
+		tmp.print();
+		auto tmp1 = client.call<int>("sum", 2, 9);
+		std::cout << tmp1 << std::endl;
+		auto tmp2 = client.call<double>("sumv", std::vector<double>({ 1, 22,3,1,0.23 }));
+		std::cout << tmp2 << std::endl;
+	} catch(rpc::RPCException e) {
+		std::cout << e.what() << std::endl;
+	}
 	return 0;
 }

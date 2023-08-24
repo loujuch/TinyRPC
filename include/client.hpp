@@ -4,12 +4,13 @@
 #include <string>
 
 #include "rpc_data.hpp"
-#include "rpc_socket.hpp"
+#include "rpc_instance_socket.hpp"
+#include "rpc_exception.hpp"
 
 namespace rpc {
 
 class Client {
-	RPCSocket rpc_socket_;
+	RPCInstanceSocket rpc_socket_;
 public:
 	Client() = default;
 	~Client() = default;
@@ -27,7 +28,11 @@ public:
 		rpc_socket_.send(rpc_in);
 
 		rpc::RPCData rpc_out;
-		rpc_socket_.recv(rpc_out);
+		bool ok = rpc_socket_.recv(rpc_out);
+
+		if(!ok) {
+			throw RPCException{ "server return error!" };
+		}
 
 		RES res;
 		rpc_out.read(res);

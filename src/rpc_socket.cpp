@@ -11,8 +11,7 @@
 #include <assert.h>
 
 rpc::RPCSocket::RPCSocket() :
-	sock_fd_(::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) {
-	assert(sock_fd_ != INADDR_NONE);
+	sock_fd_(INADDR_NONE) {
 }
 
 rpc::RPCSocket::RPCSocket(int socket_fd) :
@@ -25,10 +24,7 @@ rpc::RPCSocket::RPCSocket(RPCSocket &&rpc_socket) :
 }
 
 rpc::RPCSocket::~RPCSocket() {
-	if(sock_fd_ != INADDR_NONE) {
-		::close(sock_fd_);
-		sock_fd_ = INADDR_NONE;
-	}
+	close();
 }
 
 rpc::RPCSocket &rpc::RPCSocket::operator=(RPCSocket &&rpc_socket) {
@@ -72,20 +68,34 @@ bool rpc::RPCSocket::listen(int backlog) {
 	return ::listen(sock_fd_, backlog) == 0;
 }
 
-rpc::RPCSocket rpc::RPCSocket::accept() {
+int rpc::RPCSocket::accept() {
 	struct sockaddr addr;
 	socklen_t length = sizeof(addr);
 	int new_socket = ::accept(sock_fd_, &addr, &length);
 	assert(new_socket >= 0);
-	return std::move(RPCSocket(new_socket));
+	return new_socket;
+}
+
+void rpc::RPCSocket::close() {
+	if(sock_fd_ != INADDR_NONE) {
+		::close(sock_fd_);
+		sock_fd_ = INADDR_NONE;
+	}
+}
+
+void rpc::RPCSocket::send_error() {
+	int64_t tmp = 0;
+	send((char *)&tmp, sizeof(tmp));
 }
 
 int64_t rpc::RPCSocket::send(const char *buffer, int64_t length) {
+	if(length == 0) {
+		return 0;
+	}
 	int now = 0;
 	while(now != length) {
 		int p = ::send(sock_fd_, buffer + now, length - now, 0);
 		if(p < 0) {
-			perror("send: ");
 			if(errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
 				continue;
 			}
@@ -99,11 +109,13 @@ int64_t rpc::RPCSocket::send(const char *buffer, int64_t length) {
 }
 
 int64_t rpc::RPCSocket::recv(char *buffer, int64_t length) {
+	if(length == 0) {
+		return 0;
+	}
 	int now = 0;
 	while(now != length) {
 		int p = ::recv(sock_fd_, buffer + now, length - now, 0);
 		if(p < 0) {
-			perror("recv: ");
 			if(errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
 				continue;
 			}
@@ -124,7 +136,9 @@ bool rpc::RPCSocket::send(const RPCData &rpc_data) {
 	if(len != sizeof(out)) {
 		return false;
 	}
-	assert(len == sizeof(out));
+	if(size == 0) {
+		return true;
+	}
 	len = send(rpc_data.str(), size);
 	return len == size;
 }
@@ -133,7 +147,7 @@ bool rpc::RPCSocket::recv(RPCData &rpc_data) {
 	static_assert(sizeof(decltype(RPCData().size())) == sizeof(int64_t));
 	int64_t size;
 	int len = recv((char *)&size, sizeof(size));
-	if(len != sizeof(size)) {
+	if(len != sizeof(size) || size == 0) {
 		return false;
 	}
 	size = be64toh(size);

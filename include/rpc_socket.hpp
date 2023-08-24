@@ -12,21 +12,28 @@ class RPCData;
 class RPCSocket {
 private:
 	int sock_fd_;
-
-	explicit RPCSocket(int socket_fd);
 public:
 	RPCSocket();
+	explicit RPCSocket(int socket_fd);
 	RPCSocket(RPCSocket &&rpc_socket);
-	~RPCSocket();
+	virtual ~RPCSocket();
 
 	RPCSocket &operator=(RPCSocket &&rpc_socket);
+
+	inline void set_rpc_socket(int sock) {
+		sock_fd_ = sock;
+	}
 
 	bool connect(const std::string &ip, uint16_t port);
 
 	bool bind(const std::string &ip, uint16_t port);
 	bool listen(int backlog);
 
-	RPCSocket accept();
+	void close();
+
+	int accept();
+
+	void send_error();
 
 	int64_t send(const char *buffer, int64_t length);
 	int64_t recv(char *buffer, int64_t length);
