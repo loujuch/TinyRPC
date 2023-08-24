@@ -3,6 +3,8 @@
 
 #include "rpc_handler.hpp"
 
+#include <mutex>
+
 #include <sys/epoll.h>
 
 namespace rpc {
@@ -13,6 +15,8 @@ public:
 private:
 	int epoll_fd_;
 	struct epoll_event *events;
+
+	std::mutex epoller_mutex_;
 
 	void ctr(int fd, void *ptr, __uint32_t events, int op);
 public:

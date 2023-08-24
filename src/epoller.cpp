@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <unistd.h>
 
+#include <iostream>
+
 rpc::Epoller::Epoller() :
 	epoll_fd_(epoll_create1(EPOLL_CLOEXEC)),
 	events(new epoll_event[1024]) {
@@ -21,10 +23,12 @@ rpc::Epoller::~Epoller() {
 }
 
 void rpc::Epoller::add(int fd, void *ptr, __uint32_t events) {
+	// std::cout << "add" << std::endl;
 	ctr(fd, ptr, events, EPOLL_CTL_ADD);
 }
 
 void rpc::Epoller::del(int fd, void *ptr, __uint32_t events) {
+	// std::cout << "del" << std::endl;
 	ctr(fd, ptr, events, EPOLL_CTL_DEL);
 }
 
@@ -40,5 +44,6 @@ void rpc::Epoller::ctr(int fd, void *ptr, __uint32_t events, int op) {
 	assert(fd >= 0);
 	struct epoll_event ev;
 	ev.data.ptr = ptr;
+	std::unique_lock<std::mutex> locker(epoller_mutex_);
 	epoll_ctl(epoll_fd_, op, fd, &ev);
 }

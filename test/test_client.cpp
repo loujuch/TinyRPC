@@ -60,21 +60,6 @@ test1 change(const test0 &t) {
 	return test1(t);
 }
 
-// int num = 0;
-// std::mutex io_mutex;
-
-// void main_func(int i) {
-// 	rpc::Client client;
-// 	assert(client.connect("127.0.0.1", 8080));
-// 	// std::cout << "connect" << std::endl;
-// 	auto tmp = client.call<test1>("change", test0("loujuch"));
-// 	// std::cout << "call" << std::endl;
-// 	std::unique_lock<std::mutex> locker(io_mutex);
-// 	std::cout << i << ": ";
-// 	tmp.print();
-// 	++num;
-// }
-
 int sum(int a, int b) {
 	return a + b;
 }
@@ -88,15 +73,6 @@ double sumv(const std::vector<double> &v) {
 }
 
 int main() {
-	// int n = 32;
-	// std::vector<std::thread> client;
-	// for(int i = 0;i < n;++i) {
-	// 	client.emplace_back(main_func, i);
-	// }
-	// for(auto &p : client) {
-	// 	p.join();
-	// }
-	// std::cout << num << std::endl;
 	rpc::Client client;
 	assert(client.connect("127.0.0.1", 8080));
 	try {
