@@ -1,14 +1,13 @@
 #include "rpc_handler.hpp"
 
-#include <thread>
-
 #include "epoller.hpp"
 #include "function_handler.hpp"
+#include "rpc_thread_pool.hpp"
 
 #include <assert.h>
 
 static void main_func(rpc::RPCSocket *p,
-	rpc::FunctionHandler &fh,
+	rpc::FunctionHandler *fh,
 	rpc::ObjectPool<rpc::RPCSocket> *opool,
 	rpc::Epoller *epoller) {
 
@@ -22,7 +21,7 @@ static void main_func(rpc::RPCSocket *p,
 	std::string func;
 	in.read(func);
 	// 若出错则将out设为空
-	fh.call(func, in, out);
+	fh->call(func, in, out);
 	if(!sock.send(out)) {
 		sock.close();
 		opool->release(p);
@@ -38,6 +37,8 @@ void rpc::RPCHandler::start(RPCInstanceSocket &m_sock, FunctionHandler &fh, int 
 	m_sock.set_no_block();
 	epoller.add(m_sock.socket(), &m_sock, (EPOLLIN | EPOLLHUP | EPOLLERR));
 	sock_pool.set_object_capacity(socket_pool_size_);
+
+	RPCThreadPool thread_pool(thread_pool_size_);
 
 	while(true) {
 		int nfds = epoller.wait(timeout);
@@ -67,8 +68,7 @@ void rpc::RPCHandler::start(RPCInstanceSocket &m_sock, FunctionHandler &fh, int 
 					p->close();
 					sock_pool.release(p);
 				} else {
-					std::thread tmp(main_func, p, std::ref(fh), &sock_pool, &epoller);
-					tmp.detach();
+					thread_pool.emplace(main_func, p, &fh, &sock_pool, &epoller);
 				}
 			}
 		}
