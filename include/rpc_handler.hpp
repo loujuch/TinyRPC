@@ -11,8 +11,6 @@ class FunctionHandler;
 class RPCHandler {
 	int socket_pool_size_;
 	int thread_pool_size_;
-
-	static void main_func(RPCSocket *p, FunctionHandler &fh, ObjectPool<RPCSocket> *opool);
 public:
 	void set_socket_pool_size(int size) {
 		socket_pool_size_ = size;

@@ -20,6 +20,10 @@ public:
 
 	RPCSocket &operator=(RPCSocket &&rpc_socket);
 
+	inline int socket() const {
+		return sock_fd_;
+	}
+
 	inline void set_rpc_socket(int sock) {
 		sock_fd_ = sock;
 	}
@@ -40,6 +44,8 @@ public:
 
 	bool send(const RPCData &rpc_data);
 	bool recv(RPCData &rpc_data);
+
+	bool set_no_block();
 
 	RPCSocket(const RPCSocket &) = delete;
 	RPCSocket &operator=(const RPCSocket &) = delete;

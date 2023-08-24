@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <endian.h>
 #include <assert.h>
@@ -154,4 +155,16 @@ bool rpc::RPCSocket::recv(RPCData &rpc_data) {
 	rpc_data.assign(size);
 	len = recv(rpc_data.str(), size);
 	return len == size;
+}
+
+bool rpc::RPCSocket::set_no_block() {
+	int flags = ::fcntl(sock_fd_, F_GETFL, 0);
+	if(flags < 0) {
+		return false;
+	}
+	flags |= O_NONBLOCK;
+	if(::fcntl(sock_fd_, F_SETFL, flags) < 0) {
+		return false;
+	}
+	return true;
 }
