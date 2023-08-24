@@ -2,25 +2,15 @@
 
 #include <thread>
 
+#include "rpc_handler.hpp"
+#include "object_pool.hpp"
+
 #include <assert.h>
 
-void rpc::Server::main_func(RPCSocket *p) {
-	RPCSocket &sock = *p;
-	while(true) {
-		RPCData in, out;
-		if(!sock.recv(in)) {
-			break;
-		}
-		std::string func;
-		in.read(func);
-		// 若出错则将out设为空
-		function_handler_.call(func, in, out);
-		if(!sock.send(out)) {
-			break;
-		}
-	}
-	sock.close();
-	sock_pool_.release(p);
+rpc::Server::Server() :
+	object_size_(1024),
+	thread_pool_size_(1024),
+	timeout_(3000) {
 }
 
 void rpc::Server::start() {
@@ -30,17 +20,8 @@ void rpc::Server::start() {
 	ok = rpc_socket_.listen(5);
 	assert(ok);
 
-	sock_pool_.set_object_capacity(1024);
-
-	while(true) {
-		int sock = rpc_socket_.accept();
-		auto p = sock_pool_.allocate();
-		if(p == nullptr) {
-			RPCSocket(sock).send_error();
-			continue;
-		}
-		p->set_rpc_socket(sock);
-		std::thread tmp(&Server::main_func, this, p);
-		tmp.detach();
-	}
+	RPCHandler handler;
+	handler.set_socket_pool_size(object_size_);
+	handler.set_thread_pool_size(thread_pool_size_);
+	handler.start(rpc_socket_, function_handler_, timeout_);
 }
